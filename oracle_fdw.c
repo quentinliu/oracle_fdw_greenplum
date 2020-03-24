@@ -888,7 +888,7 @@ oracleGetForeignRelSize(PlannerInfo *root, RelOptInfo *baserel, Oid foreigntable
 	if (ntuples != -1)
 	{
 		/* estimate how conditions will influence the row count */
-		ntuples = ntuples * clauselist_selectivity(root, baserel->baserestrictinfo, 0, JOIN_INNER, NULL);
+		ntuples = ntuples * clauselist_selectivity(root, baserel->baserestrictinfo, 0, JOIN_INNER, NULL, false);
 		/* make sure that the estimate is not less that 1 */
 		ntuples = clamp_row_est(ntuples);
 		baserel->rows = ntuples;
@@ -1074,7 +1074,7 @@ oracleGetForeignJoinPaths(PlannerInfo *root,
 	if (outerrel->pages > 0 && innerrel->pages > 0)
 	{
 		/* both relations have been ANALYZEd, so there should be useful statistics */
-		joinclauses_selectivity = clauselist_selectivity(root, fdwState->joinclauses, 0, JOIN_INNER, extra->sjinfo);
+		joinclauses_selectivity = clauselist_selectivity(root, fdwState->joinclauses, 0, JOIN_INNER, extra->sjinfo, false);
 		rows = clamp_row_est(innerrel->tuples * outerrel->tuples * joinclauses_selectivity);
 	}
 	else
@@ -1476,7 +1476,7 @@ oracleIterateForeignScan(ForeignScanState *node)
 		++fdw_state->rowcount;
 
 		/* convert result to arrays of values and null indicators */
-		convertTuple(fdw_state, slot->tts_values, slot->tts_isnull, false);
+		convertTuple(fdw_state, slot_get_values(slot), slot_get_isnull(slot), false);
 
 		/* store the virtual tuple */
 		ExecStoreVirtualTuple(slot);
@@ -2039,7 +2039,7 @@ oracleExecForeignInsert(EState *estate, ResultRelInfo *rinfo, TupleTableSlot *sl
 		++fdw_state->rowcount;
 
 		/* convert result for RETURNING to arrays of values and null indicators */
-		convertTuple(fdw_state, slot->tts_values, slot->tts_isnull, false);
+		convertTuple(fdw_state, slot_get_values(slot), slot_get_isnull(slot), false);
 
 		/* store the virtual tuple */
 		ExecStoreVirtualTuple(slot);
@@ -2089,7 +2089,7 @@ oracleExecForeignUpdate(EState *estate, ResultRelInfo *rinfo, TupleTableSlot *sl
 		++fdw_state->rowcount;
 
 		/* convert result for RETURNING to arrays of values and null indicators */
-		convertTuple(fdw_state, slot->tts_values, slot->tts_isnull, false);
+		convertTuple(fdw_state, slot_get_values(slot), slot_get_isnull(slot), false);
 
 		/* store the virtual tuple */
 		ExecStoreVirtualTuple(slot);
@@ -2139,7 +2139,7 @@ oracleExecForeignDelete(EState *estate, ResultRelInfo *rinfo, TupleTableSlot *sl
 		++fdw_state->rowcount;
 
 		/* convert result for RETURNING to arrays of values and null indicators */
-		convertTuple(fdw_state, slot->tts_values, slot->tts_isnull, false);
+		convertTuple(fdw_state, slot_get_values(slot), slot_get_isnull(slot), false);
 
 		/* store the virtual tuple */
 		ExecStoreVirtualTuple(slot);
